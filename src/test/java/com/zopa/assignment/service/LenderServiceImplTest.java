@@ -4,11 +4,7 @@ package com.zopa.assignment.service;
 import com.zopa.assignment.domain.Lender;
 import com.zopa.assignment.domain.Quote;
 import com.zopa.assignment.repository.LenderRepository;
-import com.zopa.assignment.repository.LenderRepositoryImpl;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,11 +17,11 @@ import java.util.Optional;
 
 import static java.math.BigDecimal.valueOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest
+@SpringBootTest(args = {"0"})
 public class LenderServiceImplTest {
-
 
     @MockBean
     private LenderRepository lenderRepository;
@@ -33,29 +29,54 @@ public class LenderServiceImplTest {
     @Autowired
     private LenderService lenderService;
 
-    /*@BeforeEach
-    public void init(){
-        //lenderRepository = new LenderRepositoryImpl();
-        lenderService = new LenderServiceImpl(lenderRepository);
-    }*/
+    @Test
+    public void getQuoteSuccessfulWhenLendersAvailable() {
+        Mockito.when(lenderRepository.getAllLenders()).thenReturn(getLenders());
 
+        BigDecimal requestedAmount = new BigDecimal(1000);
+        Optional<Quote> quote = lenderService.getQuote(requestedAmount);
+        assertTrue(quote.isPresent());
+        assertEquals(quote.get().getRequestedAmount(), requestedAmount);
+        assertEquals(new BigDecimal("0.070"), quote.get().getAnnualInterestRate());
+        assertEquals(valueOf(30.78), quote.get().getMonthlyRepayment());
+        assertEquals(valueOf(1108.08), quote.get().getTotalRepayment());
+    }
 
     @Test
-    public void getQuote() {
+    public void noQuoteReturnedWhenLendersNotAvailable() {
+        Mockito.when(lenderRepository.getAllLenders()).thenReturn(getLenders());
+
+        BigDecimal requestedAmount = new BigDecimal(1700);
+        Optional<Quote> quote = lenderService.getQuote(requestedAmount);
+        assertFalse(quote.isPresent());
+    }
+
+    @Test
+    public void noQuoteReturnedWhenNoLendersPresent() {
+        Mockito.when(lenderRepository.getAllLenders()).thenReturn(new ArrayList<>());
+
+        BigDecimal requestedAmount = new BigDecimal(1000);
+        Optional<Quote> quote = lenderService.getQuote(requestedAmount);
+        assertFalse(quote.isPresent());
+
+    }
+
+    @Test
+    public void noQuoteReturnedWhenInvalidAmountPassed(){
+        Optional<Quote> quote = lenderService.getQuote(BigDecimal.valueOf(999.99));
+        assertFalse(quote.isPresent());
+        Optional<Quote> quote1 = lenderService.getQuote(BigDecimal.valueOf(1001));
+        assertFalse(quote1.isPresent());
+        Optional<Quote> quote2 = lenderService.getQuote(BigDecimal.valueOf(15100));
+        assertFalse(quote2.isPresent());
+    }
+
+    private List<Lender> getLenders() {
         Lender lender1 = new Lender("Jane", valueOf(0.069), new BigDecimal(480));
         Lender lender2 = new Lender("John", valueOf(0.071), new BigDecimal(520));
         List<Lender> lenders = new ArrayList<>();
         lenders.add(lender1);
         lenders.add(lender2);
-        Mockito.when(lenderRepository.getAllLenders()).thenReturn(lenders);
-        BigDecimal requestedAmount = new BigDecimal(1000);
-        Optional<Quote> quote = lenderService.getQuote(requestedAmount);
-        assertTrue(quote.isPresent());
-        assertEquals(quote.get().getRequestedAmount(), requestedAmount);
-        //assertEquals(BigDecimal.valueOf(0.070), quote.get().getAnnualInterestRate());
-        assertEquals(valueOf(30.78), quote.get().getMonthlyRepayment());
-        assertEquals(valueOf(1108.10), quote.get().getTotalRepayment());
-
-
+        return lenders;
     }
 }

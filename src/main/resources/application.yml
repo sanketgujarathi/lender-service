@@ -1,0 +1,6 @@
+lender:
+  min_val: 1000
+  max_val: 15000
+  multiplicity_factor: 100
+  duration: 36
+  file_path: classes/lenders.csv

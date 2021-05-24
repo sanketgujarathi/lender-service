@@ -4,22 +4,26 @@ import java.math.BigDecimal;
 
 public class Lender {
 
-    private String name;
+    private String lender;
     private BigDecimal rate;
-    private BigDecimal availableAmount;
+    private BigDecimal available;
 
-    public Lender(String name, BigDecimal rate, BigDecimal availableAmount) {
-        this.name = name;
+
+    public Lender() {
+    }
+
+    public Lender(String lender, BigDecimal rate, BigDecimal available) {
+        this.lender = lender;
         this.rate = rate;
-        this.availableAmount = availableAmount;
+        this.available = available;
     }
 
-    public String getName() {
-        return name;
+    public String getLender() {
+        return lender;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setLender(String lender) {
+        this.lender = lender;
     }
 
     public BigDecimal getRate() {
@@ -30,11 +34,12 @@ public class Lender {
         this.rate = rate;
     }
 
-    public BigDecimal getAvailableAmount() {
-        return availableAmount;
+    public BigDecimal getAvailable() {
+        return available;
     }
 
-    public void setAvailableAmount(BigDecimal availableAmount) {
-        this.availableAmount = availableAmount;
+    public void setAvailable(BigDecimal available) {
+        this.available = available;
     }
+
 }

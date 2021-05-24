@@ -3,6 +3,9 @@ package com.zopa.assignment.service;
 import com.zopa.assignment.domain.Lender;
 import com.zopa.assignment.domain.Quote;
 import com.zopa.assignment.repository.LenderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,21 +22,30 @@ import static java.math.BigDecimal.valueOf;
 @Service
 public class LenderServiceImpl implements LenderService {
 
-    private static final int MIN_VAL = 1000;
-    private static final int MAX_VAL = 15000;
-    private static final int DURATION = 36;
-    private static final int MULTIPLICITY_FACTOR = 100;
+    private final int MIN_VAL;
+    private final int MAX_VAL;
+    private final int DURATION;
+    private final int MULTIPLICITY_FACTOR;
     private LenderRepository lenderRepository;
+    private static Logger log = LoggerFactory.getLogger(LenderServiceImpl.class);
 
-    public LenderServiceImpl(LenderRepository lenderRepository) {
+    public LenderServiceImpl(LenderRepository lenderRepository,
+                             @Value("${lender.min_val}")int minValue,
+                             @Value("${lender.max_val}")int maxValue,
+                             @Value("${lender.duration}")int duration,
+                             @Value("${lender.multiplicity_factor}")int multiplicityFactor) {
         this.lenderRepository = lenderRepository;
+        MIN_VAL = minValue;
+        MAX_VAL = maxValue;
+        DURATION = duration;
+        MULTIPLICITY_FACTOR = multiplicityFactor;
     }
 
     @Override
     public Optional<Quote> getQuote(BigDecimal requestedAmount) {
         if(!isValidAmount(requestedAmount)) {
-            System.out.println("Please provide an amount that is between £1000 and £15000 and multiples of 100");
-            throw new RuntimeException("Please provide an amount that is between £1000 and £15000 and multiples of 100");
+            log.error("Please provide an amount that is between £1000 and £15000 and multiples of 100");
+            return Optional.empty();//TODO
         }
         List<Lender> lenders = lenderRepository.getAllLenders();
         lenders.sort(Comparator.comparing(Lender::getRate));
@@ -41,11 +53,11 @@ public class LenderServiceImpl implements LenderService {
         BigDecimal rateCalculator = ZERO;
         for (Lender lender : lenders) {
             if (remainingAmount.compareTo(ZERO) > 0) {
-                BigDecimal availableAmount = lender.getAvailableAmount();
+                BigDecimal availableAmount = lender.getAvailable();
                 BigDecimal borrowedAmount =
                         remainingAmount.compareTo(availableAmount) > 0 ? availableAmount : remainingAmount;
                 rateCalculator = rateCalculator.add(borrowedAmount.multiply(lender.getRate()));
-                lender.setAvailableAmount(availableAmount.subtract(borrowedAmount));
+                lender.setAvailable(availableAmount.subtract(borrowedAmount));
                 remainingAmount = remainingAmount.subtract(borrowedAmount);
             } else {
                 break;
@@ -53,8 +65,10 @@ public class LenderServiceImpl implements LenderService {
         }
         if (remainingAmount.compareTo(ZERO) == 0) {
             BigDecimal rate = rateCalculator.divide(requestedAmount, RoundingMode.HALF_UP);
+            log.info("Lending request fulfilled with rate {}", rate);
             return Optional.of(calculateQuote(requestedAmount, rate));
         } else {
+            log.info("Not enough offers present to fulfil the request");
             return Optional.empty();
         }
     }
@@ -62,8 +76,11 @@ public class LenderServiceImpl implements LenderService {
     private Quote calculateQuote(BigDecimal loanAmount, BigDecimal interestRate) {
         BigDecimal apr = calculateAPR(interestRate);
         BigDecimal monthlyInterestRate = apr.divide(valueOf(12), MathContext.DECIMAL128);
-        BigDecimal monthlyRepayment = calculateMonthlyRepayment(loanAmount, monthlyInterestRate);
-        return new Quote(loanAmount, interestRate, monthlyRepayment.setScale(2, RoundingMode.UP), monthlyRepayment.multiply(valueOf(DURATION)).setScale(1, RoundingMode.HALF_UP));
+        BigDecimal monthlyRepayment = calculateMonthlyRepayment(loanAmount, monthlyInterestRate).setScale(2, RoundingMode.UP);
+        return new Quote(loanAmount,
+                interestRate,
+                monthlyRepayment.setScale(2, RoundingMode.UP),
+                monthlyRepayment.multiply(valueOf(DURATION)).setScale(2, RoundingMode.UP));
     }
 
     // Amortization formula (P * r )/ (1 - 1/(1+r)^n)

@@ -1,20 +1,24 @@
 package com.zopa.assignment;
 
 import com.zopa.assignment.domain.Quote;
-import com.zopa.assignment.repository.LenderRepositoryImpl;
 import com.zopa.assignment.service.LenderService;
-import com.zopa.assignment.service.LenderServiceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.Optional;
 
 @SpringBootApplication
 public class LenderApplication implements CommandLineRunner {
 
+    private static final NumberFormat CURRENCY_FORMATTER = NumberFormat.getCurrencyInstance(Locale.UK);
     private LenderService lenderService;
+    private static Logger log = LoggerFactory.getLogger(LenderApplication.class);
 
     public LenderApplication(LenderService lenderService) {
         this.lenderService = lenderService;
@@ -26,19 +30,20 @@ public class LenderApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        Optional<Quote> quote = lenderService.getQuote(BigDecimal.valueOf(1000));
-        if(quote.isPresent()){
-            displayQuote(quote.get());
-        } else {
-            System.out.println("It is not possible to provide a quote.");
-        }
+        Optional<Quote> quote = lenderService.getQuote(new BigDecimal(args[0]));
+        displayQuote(quote);
     }
 
-    private void displayQuote(Quote quote){
+    private void displayQuote(Optional<Quote> quote){
 
-        System.out.println("quote.getRequestedAmount() = " + quote.getRequestedAmount());
-        System.out.println("quote.getAnnualInterestRate() = " + quote.getAnnualInterestRate());
-        System.out.println("quote.getMonthlyRepayment() = " + quote.getMonthlyRepayment());
-        System.out.println("quote.getTotalRepayment() = " + quote.getTotalRepayment());
+        if(quote.isPresent()){
+            Quote quote1 = quote.get();
+            log.info("Requested amount: {}", CURRENCY_FORMATTER.format(quote1.getRequestedAmount()));
+            log.info("Annual Interest Rate: {}", NumberFormat.getPercentInstance().format(quote1.getAnnualInterestRate()));
+            log.info("Monthly repayment: {}", CURRENCY_FORMATTER.format(quote1.getMonthlyRepayment()));
+            log.info("Total repayment: {}", CURRENCY_FORMATTER.format(quote1.getTotalRepayment()));
+        } else {
+            log.info("It is not possible to provide a quote.");
+        }
     }
 }
