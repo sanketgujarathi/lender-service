@@ -18,6 +18,7 @@ import java.util.Optional;
 import static java.math.BigDecimal.valueOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(args = {"0"})
@@ -63,12 +64,9 @@ public class LenderServiceImplTest {
 
     @Test
     public void noQuoteReturnedWhenInvalidAmountPassed(){
-        Optional<Quote> quote = lenderService.getQuote(BigDecimal.valueOf(999.99));
-        assertFalse(quote.isPresent());
-        Optional<Quote> quote1 = lenderService.getQuote(BigDecimal.valueOf(1001));
-        assertFalse(quote1.isPresent());
-        Optional<Quote> quote2 = lenderService.getQuote(BigDecimal.valueOf(15100));
-        assertFalse(quote2.isPresent());
+        assertThrows(IllegalArgumentException.class, () -> lenderService.getQuote(BigDecimal.valueOf(999.99)));
+        assertThrows(IllegalArgumentException.class, () -> lenderService.getQuote(BigDecimal.valueOf(1001)));
+        assertThrows(IllegalArgumentException.class, () -> lenderService.getQuote(BigDecimal.valueOf(15100)));
     }
 
     private List<Lender> getLenders() {

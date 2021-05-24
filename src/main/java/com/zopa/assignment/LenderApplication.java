@@ -17,6 +17,7 @@ import java.util.Optional;
 public class LenderApplication implements CommandLineRunner {
 
     private static final NumberFormat CURRENCY_FORMATTER = NumberFormat.getCurrencyInstance(Locale.UK);
+    private static final NumberFormat PERCENT_FORMATTER = getNumberFormat();
     private LenderService lenderService;
     private static Logger log = LoggerFactory.getLogger(LenderApplication.class);
 
@@ -30,8 +31,12 @@ public class LenderApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        Optional<Quote> quote = lenderService.getQuote(new BigDecimal(args[0]));
-        displayQuote(quote);
+        try {
+            Optional<Quote> quote = lenderService.getQuote(new BigDecimal(args[0]));
+            displayQuote(quote);
+        } catch (IllegalArgumentException e) {
+            log.error(e.getMessage());
+        }
     }
 
     private void displayQuote(Optional<Quote> quote){
@@ -39,13 +44,17 @@ public class LenderApplication implements CommandLineRunner {
         if(quote.isPresent()){
             Quote quote1 = quote.get();
             log.info("Requested amount: {}", CURRENCY_FORMATTER.format(quote1.getRequestedAmount()));
-            NumberFormat percentInstance = NumberFormat.getPercentInstance();
-            percentInstance.setMaximumFractionDigits(2);
-            log.info("Annual Interest Rate: {}", percentInstance.format(quote1.getAnnualInterestRate()));
+            log.info("Annual Interest Rate: {}", PERCENT_FORMATTER.format(quote1.getAnnualInterestRate()));
             log.info("Monthly repayment: {}", CURRENCY_FORMATTER.format(quote1.getMonthlyRepayment()));
             log.info("Total repayment: {}", CURRENCY_FORMATTER.format(quote1.getTotalRepayment()));
         } else {
             log.info("It is not possible to provide a quote.");
         }
+    }
+
+    private static NumberFormat getNumberFormat() {
+        NumberFormat percentInstance = NumberFormat.getPercentInstance();
+        percentInstance.setMaximumFractionDigits(2);
+        return percentInstance;
     }
 }

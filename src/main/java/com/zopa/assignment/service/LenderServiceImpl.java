@@ -43,9 +43,9 @@ public class LenderServiceImpl implements LenderService {
 
     @Override
     public Optional<Quote> getQuote(BigDecimal requestedAmount) {
-        if(!isValidAmount(requestedAmount)) {
-            log.error("Please provide an amount that is between £1000 and £15000 and multiples of 100");
-            return Optional.empty();//TODO
+        if (!isValidAmount(requestedAmount)) {
+            log.error("Invalid amount passed");
+            throw new IllegalArgumentException("Please provide an amount that is between £1000 and £15000 and multiples of 100");
         }
         List<Lender> lenders = lenderRepository.getAllLenders();
         lenders.sort(Comparator.comparing(Lender::getRate));
@@ -84,11 +84,11 @@ public class LenderServiceImpl implements LenderService {
     }
 
     // Amortization formula (P * r )/ (1 - 1/(1+r)^n)
-    private BigDecimal calculateMonthlyRepayment(BigDecimal loanAmount, BigDecimal monthylyInterestRate) {
-        return loanAmount.multiply(monthylyInterestRate).divide(
+    private BigDecimal calculateMonthlyRepayment(BigDecimal loanAmount, BigDecimal monthlyInterestRate) {
+        return loanAmount.multiply(monthlyInterestRate).divide(
                 ONE.subtract(
                         ONE.divide(
-                                ONE.add(monthylyInterestRate)
+                                ONE.add(monthlyInterestRate)
                                         .pow(DURATION), MathContext.DECIMAL128)), MathContext.DECIMAL128);
     }
 

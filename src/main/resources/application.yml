@@ -3,4 +3,4 @@ lender:
   max_val: 15000
   multiplicity_factor: 100
   duration: 36
-  file_path: classes/lenders.csv
+  file_path: ${user.dir}/classes/lenders.csv
