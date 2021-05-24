@@ -9,6 +9,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -21,7 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringBootTest(args = {"0"})
+@SpringBootTest
+@ContextConfiguration(classes = LenderServiceImpl.class)
 public class LenderServiceImplTest {
 
     @MockBean
@@ -36,6 +38,7 @@ public class LenderServiceImplTest {
 
         BigDecimal requestedAmount = new BigDecimal(1000);
         Optional<Quote> quote = lenderService.getQuote(requestedAmount);
+
         assertTrue(quote.isPresent());
         assertEquals(quote.get().getRequestedAmount(), requestedAmount);
         assertEquals(new BigDecimal("0.070"), quote.get().getAnnualInterestRate());
@@ -49,6 +52,7 @@ public class LenderServiceImplTest {
 
         BigDecimal requestedAmount = new BigDecimal(1700);
         Optional<Quote> quote = lenderService.getQuote(requestedAmount);
+
         assertFalse(quote.isPresent());
     }
 
@@ -58,6 +62,7 @@ public class LenderServiceImplTest {
 
         BigDecimal requestedAmount = new BigDecimal(1000);
         Optional<Quote> quote = lenderService.getQuote(requestedAmount);
+        
         assertFalse(quote.isPresent());
 
     }
